@@ -1,0 +1,14 @@
+[project]
+name = "conspiracy-prototype"
+description = "Very simple implementation of a hypothetical conspiracy puzzle(ish) game"
+version = "0.1.0"
+authors = [
+    { name = "Eric Scammell", email = "eric.scammell@gmail.com"}
+]
+
+[tool.setuptools.package-dir]
+"conspiracy.engine" = "engine"
+
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
