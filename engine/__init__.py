@@ -4,4 +4,4 @@ from . import characters
 from . import engine
 from . import player
 
-from engine import Game
+from .engine import Game, main

@@ -19,9 +19,11 @@ class Player(entity.Entity):
         super().__init__(start_pos)
         self.remembered_projections = {}
         self.visible_characters = set()
+        self.visible_entities = set()
         self.incorrect_guesses = defaultdict(list)
 
         self.moved_this_tick = False
+        self.update_visibility()
 
     def __str__(self):
         # This class mostly supports multiple players, so perhaps this should be a
@@ -33,16 +35,22 @@ class Player(entity.Entity):
             raise AlreadyMoved()
         else:
             self.location = self.location.get_neighbor(direction)
+            self.moved_this_tick = True
 
     def tick(self):
         self.moved_this_tick = False
+        self.update_visibility()
+        self.evaluate_guesses()
 
+    def update_visibility(self):
+        self.visible_entities = {
+            entity for entity in self.location.entities_present if entity is not self
+        }
         self.visible_characters = set(
             entity
-            for entity in self.location.entities_present
+            for entity in self.visible_entities
             if isinstance(entity, characters.Character)
         )
-        self.evaluate_guesses()
 
     def evaluate_guesses(self):
         for entity in self.visible_characters:

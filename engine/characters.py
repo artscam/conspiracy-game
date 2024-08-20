@@ -11,7 +11,9 @@ class ApparentCharacter(Entity):
         super().__init__(location, unreal)
 
     def move(self, direction):
-        self.location = self.location.get_neighbor(direction)
+        new_location = self.location.get_neighbor(direction)
+        self.logger.info(f"Moving {direction} to {new_location}")
+        self.location = new_location
 
     def tick(self):
         self.behavior.tick(self)

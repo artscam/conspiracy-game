@@ -13,6 +13,8 @@ class Entity:
         self.logger = logging.getLogger(type(self).__name__).getChild(str(self))
         self.location = location
 
+        self.logger.debug(f"Spawned with ID {self.id} at {self.location}")
+
     def __repr__(self):
         return f"<{type(self).__name__}: {self.id}>"
 
@@ -25,9 +27,7 @@ class Entity:
         if not self.unreal:
             if self._location is not None:
                 self.location.entities_present.remove(self)
-                self.logger.info(f"Moved from {self.location} to {value}")
-            else:
-                self.logger.info(f"Spawned at {value}")
+                self.logger.debug(f"Moved from {self.location} to {value}")
 
         self._location = value
 

@@ -1,8 +1,11 @@
 import logging
+import coloredlogs
+import falcon
 
 from conspiracy.engine.locations import Map
 from conspiracy.engine.characters import Character
 from conspiracy.engine.player import Player
+import conspiracy.engine.api
 
 
 class Game:
@@ -11,6 +14,7 @@ class Game:
 
     def __init__(self):
         self.logger = logging.getLogger("Game")
+        self.tick = 0
 
         self.map = Map(self._NUM_ROOMS)
 
@@ -22,7 +26,9 @@ class Game:
         self.entities = self.characters + [self.player]
 
     def tick_once(self):
-        self.logger.info("Start of tick")
+        self.tick += 1
+        self.logger.info(f"Start of tick {self.tick}")
+
         for entity in self.entities:
             entity.tick()
 
@@ -32,7 +38,9 @@ class Game:
 
 
 def main():
-    logging.basicConfig(level=logging.DEBUG)
+    coloredlogs.install(
+        level="DEBUG", fmt="%(asctime)s,%(msecs)03d %(name)s %(levelname)s %(message)s"
+    )
 
     game = Game()
-    game.run(10)
+    conspiracy.engine.api.run_webapp(game)

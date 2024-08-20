@@ -5,6 +5,13 @@ version = "0.1.0"
 authors = [
     { name = "Eric Scammell", email = "eric.scammell@gmail.com"}
 ]
+dependencies = [
+    "coloredlogs",
+    "falcon"
+]
+
+[project.scripts]
+conspiracy-backend = "conspiracy.engine:main"
 
 [tool.setuptools.package-dir]
 "conspiracy.engine" = "engine"
