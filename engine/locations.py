@@ -1,7 +1,7 @@
 import enum
 import logging
-import uuid
 import random
+import uuid
 
 _LOGGER = logging.getLogger("Mapping")
 
@@ -26,10 +26,52 @@ class NoConnectingRoom(Exception):
 
 
 class Room:
+    _room_names = [
+        "Attic",
+        "Loft",
+        "Spare room",
+        "Bedroom",
+        "Bathroom",
+        "Balcony",
+        "Nursery",
+        "Study",
+        "Utility room",
+        "Panic room",
+        "Conservatory",
+        "Living room",
+        "Dining room",
+        "Kitchen",
+        "Garage",
+        "Mud room",
+        "Basement",
+        "Games room",
+        "Wine cellar",
+        "Lobby",
+        "Landing",
+        "Operating theatre",
+        "Parlor",
+        "Control room",
+        "Fusion core",
+        "Wardrobe",
+        "Shed",
+        "Porch",
+        "Library",
+        "Tree house",
+        "Greenhouse",
+        "Engineering",
+        "Galley",
+    ]
+
     def __init__(self):
         self.id = uuid.uuid4()
         self.entities_present = set()
         self.neighbors = {}
+
+        try:
+            random.shuffle(self._room_names)
+            self.name = self._room_names.pop()
+        except IndexError as ex:
+            raise IndexError("Ran out of names for rooms") from ex
 
         self._logger = _LOGGER.getChild(str(self.id))
         self._logger.info(f"Created room")
@@ -50,6 +92,17 @@ class Room:
         except KeyError as ex:
             raise NoConnectingRoom() from ex
 
+    def to_json(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "entities_present": [str(entity.id) for entity in self.entities_present],
+            "neighbors": {
+                direction.name: str(room.id)
+                for direction, room in self.neighbors.items()
+            },
+        }
+
     def __str__(self):
         return repr(self)
 
@@ -59,13 +112,13 @@ class Room:
 
 class Map:
     def __init__(self, num_rooms):
-        self.rooms = [Room() for _ in range(num_rooms)]
+        rooms = [Room() for _ in range(num_rooms)]
 
-        for room in self.rooms:
+        for room in rooms:
             for direction in Direction:
                 if direction not in room.neighbors:
                     for _ in range(3):
-                        chosen_room = random.choice(self.rooms)
+                        chosen_room = random.choice(rooms)
                         if (chosen_room != room) and room.add_neighbor(
                             chosen_room, direction
                         ):
@@ -78,5 +131,14 @@ class Map:
             if not room.neighbors:
                 room._logger.warning("Room has no links")
 
+        self.rooms = {room.id: room for room in rooms}
+
+    def __getitem__(self, location_id: str | uuid.UUID):
+        if not isinstance(location_id, uuid.UUID):
+            key = uuid.UUID(location_id)
+        else:
+            key = location_id
+        return self.rooms[key]
+
     def get_random_room(self):
-        return random.choice(self.rooms)
+        return random.choice(list(self.rooms.values()))

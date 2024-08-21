@@ -1,11 +1,11 @@
 import logging
-import coloredlogs
-import falcon
 
-from conspiracy.engine.locations import Map
-from conspiracy.engine.characters import Character
-from conspiracy.engine.player import Player
+import coloredlogs
 import conspiracy.engine.api
+import falcon
+from conspiracy.engine.characters import Character
+from conspiracy.engine.locations import Map
+from conspiracy.engine.player import Player
 
 
 class Game:

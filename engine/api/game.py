@@ -15,7 +15,7 @@ class Ticks:
         resp.media = {"current_tick": self.game_instance.tick}
 
 
-class Game:
+class GameView:
     def __init__(self, game, app: falcon.App):
         self.game_instance = game
         app.add_route("/game/tick", Ticks(self.game_instance))

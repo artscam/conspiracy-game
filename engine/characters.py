@@ -1,8 +1,8 @@
 import random
 from abc import ABC, abstractmethod
 
-from .locations import Direction, Room, NoConnectingRoom
 from .entity import Entity
+from .locations import Direction, NoConnectingRoom, Room
 
 
 class ApparentCharacter(Entity):
@@ -24,6 +24,11 @@ class Behavior(ABC):
     @abstractmethod
     def tick(cls, character: ApparentCharacter):
         raise NotImplementedError()
+
+    @classmethod
+    def to_json(cls):
+        # Should probably add a description here
+        return cls.__name__
 
 
 class MoveStraight(Behavior):
@@ -60,10 +65,32 @@ class Character(ApparentCharacter):
         "Mia",
         "Willow",
     ]
+    _all_characters = {}
 
     def __init__(self, location: Room):
         self.name = random.choice(self._NAME_LIST)
         super().__init__(MoveStraight, location)
+        self._all_characters[self.id] = self
+
+    @classmethod
+    def get_character(cls, character_id):
+        return cls._all_characters[character_id]
+
+    @classmethod
+    def get_all(cls):
+        return cls._all_characters.values()
+
+    def to_json(self, include_location=True, include_behaviour=False):
+        description = {
+            "id": self.id,
+            "name": self.name,
+        }
+        if include_location:
+            description["location"] = self.location.id
+        if include_behaviour:
+            description["behavior"] = self.behavior.to_json()
+
+        return description
 
     def __str__(self):
         return self.name
@@ -74,6 +101,13 @@ class CharacterProjection(ApparentCharacter):
         super().__init__(expected_behavior, real.location, True)
 
         self.character = real
+
+    def to_json(self):
+        return {
+            "id": self.id,
+            "character": self.character.to_json(include_location=False),
+            "behaviour_guess": self.behavior.to_json(),
+        }
 
     def __str__(self):
         return f"Projection of {self.character.name}"

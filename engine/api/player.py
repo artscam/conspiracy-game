@@ -1,7 +1,9 @@
+import logging
+
 import falcon
+
 from ..locations import Direction, NoConnectingRoom
 from ..player import AlreadyMoved
-import logging
 
 
 class PlayerComponent:
@@ -27,7 +29,7 @@ class Movement(PlayerComponent):
                 title="Player has already moved this tick"
             ) from ex
 
-        resp.media = {"new_location": str(self.player.location.id)}
+        resp.media = {"new_location": self.player.location.id}
 
         if request_payload.get("advance_tick", True):
             logging.debug("Automatically advancing tick after player movement")
@@ -35,19 +37,49 @@ class Movement(PlayerComponent):
 
             resp.media["new_tick"] = self.game.tick
 
+    def on_get_location(self, req, resp):
+        resp.media = {"location": self.player.location.id}
+
 
 class VisibleEntities(PlayerComponent):
     def on_get(self, req, resp):
         resp.media = {
-            "entities": [str(entity.id) for entity in self.player.visible_entities],
-            "characters": [str(entity.id) for entity in self.player.visible_characters],
+            "entities": [entity.to_json() for entity in self.player.visible_entities],
+            "characters": [
+                entity.to_json() for entity in self.player.visible_characters
+            ],
         }
 
+    def on_get_all_known(self, req, resp):
+        resp.media = self.player.describe_known_characters()
 
-class Player:
+    def on_get_known(self, req, resp, character_id):
+        try:
+            resp.media = self.player.try_expand_character(character_id)
+        except KeyError as ex:
+            raise falcon.HTTPBadRequest(
+                title="Character not known to player",
+                description=f"Character {character_id} is not known to the player, having never been observed",
+            ) from ex
+
+
+class PlayerView:
     def __init__(self, game, player, app: falcon.App):
         self.player = player
         self.game = game
+        movement_controller = Movement(player, game)
+        entities_controller = VisibleEntities(player, game)
 
-        app.add_route("/player/move", Movement(player, game))
-        app.add_route("/player/entities_in_sight", VisibleEntities(player, game))
+        app.add_route("/player/move", movement_controller)
+        app.add_route("/player/location", movement_controller, suffix="location")
+        app.add_route("/player/entities_in_sight", entities_controller)
+        app.add_route(
+            "/player/known_character/{character_id:uuid}",
+            entities_controller,
+            suffix="known",
+        )
+        app.add_route(
+            "/player/known_character",
+            entities_controller,
+            suffix="all_known",
+        )

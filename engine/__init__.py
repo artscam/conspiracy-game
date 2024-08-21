@@ -1,7 +1,2 @@
-from . import locations
-from . import entity
-from . import characters
-from . import engine
-from . import player
-
+from . import characters, engine, entity, locations, player
 from .engine import Game, main

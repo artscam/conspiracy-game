@@ -1,9 +1,6 @@
 from collections import defaultdict
 
-
-from conspiracy.engine import entity
-from conspiracy.engine import locations
-from conspiracy.engine import characters
+from conspiracy.engine import characters, entity, locations
 
 
 class GuessAlreadyDisproven(Exception):
@@ -22,6 +19,9 @@ class Player(entity.Entity):
         self.visible_entities = set()
         self.incorrect_guesses = defaultdict(list)
 
+        self.all_known_rooms = set()
+        self.all_known_characters = set()
+
         self.moved_this_tick = False
         self.update_visibility()
 
@@ -36,6 +36,7 @@ class Player(entity.Entity):
         else:
             self.location = self.location.get_neighbor(direction)
             self.moved_this_tick = True
+            self.all_known_rooms.add(self.location)
 
     def tick(self):
         self.moved_this_tick = False
@@ -51,6 +52,9 @@ class Player(entity.Entity):
             for entity in self.visible_entities
             if isinstance(entity, characters.Character)
         )
+        self.all_known_characters.update(
+            character.id for character in self.visible_characters
+        )
 
     def evaluate_guesses(self):
         for entity in self.visible_characters:
@@ -64,6 +68,28 @@ class Player(entity.Entity):
                 self.logger.info(f"Discarding inaccurate projection for {entity}")
                 self.incorrect_guesses[entity].append(projection.behavior)
                 del self.remembered_projections[entity]
+
+    def try_expand_character(self, character_id):
+        try:
+            projection = self.remembered_projections[character_id]
+            return projection.to_json()
+        except KeyError:
+            if character_id in self.all_known_characters:
+                return {
+                    "character": characters.Character.get_character(
+                        character_id
+                    ).to_json(include_location=False)
+                }
+            else:
+                raise KeyError(
+                    f"Character {character_id} has never been observed by the player"
+                )
+
+    def describe_known_characters(self):
+        return [
+            self.try_expand_character(character)
+            for character in self.all_known_characters
+        ]
 
     def make_guess(self, character, behavior):
         if behavior not in self.incorrect_guesses[character]:
